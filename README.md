@@ -17,12 +17,12 @@ If you would like to do a basic setup in this module, please check these command
 
 `npm install @mui/styled-engine`
 
+`npm install axios`
+
 ## Customization
 If you would like to do a customization, please check these files like below.
 
 /src/App.tsx
-
-/src/json/data.json
 
 ## Available Scripts
 

@@ -27,16 +27,51 @@ import {
   SortingState,
   useReactTable
 } from "@tanstack/react-table";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
+import axios from "axios";
 
-const data = require('./json/data.json');
+interface User {
+  address: {
+    city: string;
+    geo: {
+      lat: string;
+      lng: string;
+    }
+  }
+}
+
+/**
+ * A function whether it was judged to an error type or not.
+ */
+const isError = (error: unknown): error is Error => {
+  return error instanceof Error;
+};
 
 export const App = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [error, setError] = useState<Error | undefined>(undefined);
+  const columns = useMemo<ColumnDef<User>[]>(
+    () => [
+      {
+        header: "username",
+        accessorKey: "username",
+      },
+      {
+        header: "email",
+        accessorKey: "email",
+      },
+      {
+        header: "phone",
+        accessorKey: "phone",
+      }
+    ],
+    []
+  );
   const [filterConditions, setFilterConditions] = useState<
     { id: string; value: string | number }[]
   >([]);
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "HostName", desc: false }
+    { id: "username", desc: false }
   ]);
   const [pageSetting, setPageSetting] = useState({
     pageIndex: 0,
@@ -147,31 +182,31 @@ export const App = () => {
     ]);
   };
 
-  // globalFilterもある
-  // globalFilter特定の検索ワードが存在するかどうかでフィルター
+  // There is "globalFilter".
+  // "globalFilter" filters whether a specific search word exists or not.
   const COLUMNS: ColumnDef<any>[] = [
     {
-      header: (props) => getCustomHeader("HostName", false, props),
-      accessorKey: "HostName",
+      header: (props) => getCustomHeader("username", false, props),
+      accessorKey: "username",
       cell: (props) => getCustomBody(props, "left", false),
       filterFn: (row, id) => stringFilter(row, id)
     },
     {
-      header: (props) => getCustomHeader("SoftwareName", false, props),
-      accessorKey: "SoftwareName",
+      header: (props) => getCustomHeader("email", false, props),
+      accessorKey: "email",
       cell: (props) => getCustomBody(props, "left", false),
       filterFn: (row, id) => stringFilter(row, id)
     },
     {
-      header: (props) => getCustomHeader("最終更新日", false, props),
-      accessorKey: "UpdateDate",
+      header: (props) => getCustomHeader("phone", false, props),
+      accessorKey: "phone",
       cell: (props) => getCustomBody(props, "left", false),
       filterFn: (row, id) => dateAndNumberFilter(row, id)
     }
   ];
 
   const table = useReactTable({
-    data: data,
+    data: users,
     columns: COLUMNS,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -187,34 +222,53 @@ export const App = () => {
     }
   });
 
+  const fetchUser = useCallback(async () => {
+    try {
+      const response = await axios.get("https://jsonplaceholder.typicode.com/users");
+      setUsers(response.data);
+    } catch (e) {
+      if (isError(e)) {
+        setError(e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
+  if (error) {
+    return <div>{error.message}</div>;
+  }
+
   return (
     <Box m={2}>
       <Box mt={2}>
         <TextField
-          label="HostName"
+          label="username"
           InputLabelProps={{ shrink: true }}
           variant="standard"
           value={
-            filterConditions.find((condition) => condition.id === "HostName")
+            filterConditions.find((condition) => condition.id === "username")
               ?.value ?? ""
           }
           onChange={(e) => {
-            onChangeCondition("HostName", e.target.value);
+            onChangeCondition("username", e.target.value);
           }}
         />
       </Box>
 
       <Box mt={2}>
         <TextField
-          label="SoftwareName"
+          label="email"
           InputLabelProps={{ shrink: true }}
           variant="standard"
           value={
-            filterConditions.find((condition) => condition.id === "SoftwareName")
+            filterConditions.find((condition) => condition.id === "email")
               ?.value ?? ""
           }
           onChange={(e) => {
-            onChangeCondition("SoftwareName", e.target.value);
+            onChangeCondition("email", e.target.value);
           }}
         />
       </Box>
